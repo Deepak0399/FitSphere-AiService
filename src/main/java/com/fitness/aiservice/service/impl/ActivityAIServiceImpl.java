@@ -21,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ActivityAIServiceImpl implements ActivityAIService {
     private final GeminiService geminiService;
+    private final ObjectMapper objectMapper;
     @Override
     public Recommendation generateRecommendation(Activity activity) {
         String prompt = createPromptForActivity(activity);
@@ -30,8 +31,8 @@ public class ActivityAIServiceImpl implements ActivityAIService {
     }
     private Recommendation processAiResponse(Activity activity, String aiResponse) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(aiResponse);
+
+            JsonNode rootNode = objectMapper.readTree(aiResponse);
 
             JsonNode textNode = rootNode.path("candidates")
                     .get(0)
@@ -41,13 +42,13 @@ public class ActivityAIServiceImpl implements ActivityAIService {
                     .path("text");
 
             String jsonContent = textNode.asText()
-                    .replaceAll("```json\\n","")
-                    .replaceAll("\\n```", "")
+                    .replace("```json\\n","")
+                    .replace("\\n```", "")
                     .trim();
 
 //            log.info("PARSED RESPONSE FROM AI: {} ", jsonContent);
 
-            JsonNode analysisJson = mapper.readTree(jsonContent);
+            JsonNode analysisJson = objectMapper.readTree(jsonContent);
             JsonNode analysisNode = analysisJson.path("analysis");
 
             StringBuilder fullAnalysis = new StringBuilder();
@@ -73,6 +74,7 @@ public class ActivityAIServiceImpl implements ActivityAIService {
 
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("Failed to process activity {}", activity.getId(), e);
             return createDefaultRecommendation(activity);
         }
     }

@@ -3,8 +3,10 @@ package com.fitness.aiservice.service.impl;
 import com.fitness.aiservice.service.GeminiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
@@ -42,9 +44,19 @@ public class GeminiServiceImpl implements GeminiService {
                 .header("Content-Type", "application/json")
                 .bodyValue(requestContent)
                 .retrieve()
+                .onStatus(
+                        HttpStatusCode::isError,
+                        erResponse -> erResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> {
+                                    log.error("Gemini Error: {}", errorBody);
+                                    return Mono.error(
+                                            new RuntimeException(errorBody)
+                                    );
+                                })
+                )
                 .bodyToMono(String.class)
                 .block();
-        log.info("response getting from ai: {}", response);
+        log.info("Response getting from ai: {}", response);
         return response;
     }
 }

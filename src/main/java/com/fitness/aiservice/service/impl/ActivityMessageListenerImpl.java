@@ -20,10 +20,10 @@ public class ActivityMessageListenerImpl implements ActivityMessageListener {
     @Override
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void processActivity(Activity activity) {
-        log.info("Receive activity for processing: {}", activity.getId());
+        log.info("Receive activity data for processing: {}", activity.getId());
         Recommendation recommendation = activityAIService.generateRecommendation(activity);
-        log.info("Recommendation: {}", recommendation);
-        recommendationRepository.save(recommendation);
-
+        log.info("Recommendation going to save in db {}", recommendation);
+        Recommendation savedRecommendation = recommendationRepository.save(recommendation);
+        log.info("Recommendation saved: {}", savedRecommendation);
     }
 }
